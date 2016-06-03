@@ -14,7 +14,7 @@ import org.apache.spark.mllib.fpm.FPGrowth
 
 object FPGrowthPractice {
   case class Params(
-    input: String = "file:///home/cloudera/Downloads/webdocs.dat",
+    input: String = "hdfs://localhost:8020/user/cloudera/webdocs.dat",
     minSupport: Double = 0.3,
     numPartition: Int = 5)
 
@@ -43,9 +43,12 @@ object FPGrowthPractice {
       .run(transactions) /* then hand over the transactions */
 
     println(s"Number of frequent itemsets: ${model.freqItemsets.count()}")
-    model.freqItemsets.collect().foreach { itemset =>
-      println(itemset.items.mkString("[", ",", "]") + ", " + itemset.freq)
-    }
+    // model.freqItemsets.saveAsTextFile("hdfs://localhost:8020/user/cloudera/fpgrowth_output.txt")
+
+    model.freqItemsets
+      .map(itemset => (itemset.items.mkString, itemset.freq))
+      .coalesce(1,true)
+      .saveAsTextFile("hdfs://localhost:8020/user/cloudera/fpgrowth_output")
 
     sc.stop()
   }
